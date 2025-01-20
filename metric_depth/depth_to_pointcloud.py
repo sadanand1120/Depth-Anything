@@ -1,8 +1,3 @@
-# Born out of Issue 36. 
-# Allows  the user to set up own test files to infer on (Create a folder my_test and add subfolder input and output in the metric_depth directory before running this script.)
-# Make sure you have the necessary libraries
-# Code by @1ssb
-
 import argparse
 import os
 import glob
@@ -12,19 +7,21 @@ from PIL import Image
 import torchvision.transforms as transforms
 import open3d as o3d
 from tqdm import tqdm
-from zoedepth.models.builder import build_model
-from zoedepth.utils.config import get_config
+from third_party.Depth_Anything.metric_depth import zoedepth
+from third_party.Depth_Anything.metric_depth.zoedepth.models.builder import build_model
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.config import get_config
 
 # Global settings
 FL = 715.0873
-FY = 256 * 0.6
-FX = 256 * 0.6
+FY = 560.4279174804688
+FX = 560.4279174804688
 NYU_DATA = False
-FINAL_HEIGHT = 256
-FINAL_WIDTH = 256
-INPUT_DIR = './my_test/input'
-OUTPUT_DIR = './my_test/output'
-DATASET = 'nyu' # Lets not pick a fight with the model's dataloader
+FINAL_HEIGHT = 540
+FINAL_WIDTH = 960
+INPUT_DIR = '/home/dynamo/Music/jackal_bags/test_depth/input'
+OUTPUT_DIR = '/home/dynamo/Music/jackal_bags/test_depth/output'
+DATASET = 'nyu'  # Lets not pick a fight with the model's dataloader
+
 
 def process_images(model):
     if not os.path.exists(OUTPUT_DIR):
@@ -63,6 +60,7 @@ def process_images(model):
         except Exception as e:
             print(f"Error processing {image_path}: {e}")
 
+
 def main(model_name, pretrained_resource):
     config = get_config(model_name, "eval", DATASET)
     config.pretrained_resource = pretrained_resource
@@ -70,10 +68,11 @@ def main(model_name, pretrained_resource):
     model.eval()
     process_images(model)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--model", type=str, default='zoedepth', help="Name of the model to test")
-    parser.add_argument("-p", "--pretrained_resource", type=str, default='local::./checkpoints/depth_anything_metric_depth_indoor.pt', help="Pretrained resource to use for fetching weights.")
+    parser.add_argument("-p", "--pretrained_resource", type=str, default='local::/home/dynamo/AMRL_Research/repos/nspl/third_party/Depth_Anything/metric_depth/checkpoints/depth_anything_metric_depth_outdoor.pt', help="Pretrained resource to use for fetching weights.")
 
     args = parser.parse_args()
     main(args.model, args.pretrained_resource)

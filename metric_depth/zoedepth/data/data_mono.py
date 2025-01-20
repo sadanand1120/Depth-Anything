@@ -33,12 +33,12 @@ import cv2
 import torch
 import torch.nn as nn
 import torch.utils.data.distributed
-from zoedepth.utils.easydict import EasyDict as edict
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.easydict import EasyDict as edict
 from PIL import Image, ImageOps
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
-from zoedepth.utils.config import change_dataset
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.config import change_dataset
 
 from .ddad import get_ddad_loader
 from .diml_indoor_test import get_diml_indoor_loader
@@ -102,7 +102,7 @@ class DepthDataLoader(object):
 
         if "diode" in config.dataset:
             self.data = get_diode_loader(
-                config[config.dataset+"_root"], batch_size=1, num_workers=1)
+                config[config.dataset + "_root"], batch_size=1, num_workers=1)
             return
 
         if config.dataset == 'hypersim_test':
@@ -150,7 +150,7 @@ class DepthDataLoader(object):
                                    num_workers=config.workers,
                                    pin_memory=True,
                                    persistent_workers=True,
-                                #    prefetch_factor=2,
+                                   #    prefetch_factor=2,
                                    sampler=self.train_sampler)
 
         elif mode == 'online_eval':
@@ -339,7 +339,6 @@ class DataLoadPreprocess(Dataset):
                 depth_gt = np.pad(depth_gt, ((crop_params.top, h - crop_params.bottom), (crop_params.left, w - crop_params.right)), 'constant', constant_values=0)
                 depth_gt = Image.fromarray(depth_gt)
 
-
             if self.config.do_random_rotate and (self.config.aug):
                 random_angle = (random.random() - 0.5) * 2 * self.config.degree
                 image = self.rotate_image(image, random_angle)
@@ -358,7 +357,7 @@ class DataLoadPreprocess(Dataset):
             if self.config.aug and (self.config.random_crop):
                 image, depth_gt = self.random_crop(
                     image, depth_gt, self.config.input_height, self.config.input_width)
-            
+
             if self.config.aug and self.config.random_translate:
                 # print("Random Translation!")
                 image, depth_gt = self.random_translate(image, depth_gt, self.config.max_translation)
@@ -452,7 +451,7 @@ class DataLoadPreprocess(Dataset):
         depth = depth[y:y + height, x:x + width, :]
 
         return img, depth
-    
+
     def random_translate(self, img, depth, max_t=20):
         assert img.shape[0] == depth.shape[0]
         assert img.shape[1] == depth.shape[1]

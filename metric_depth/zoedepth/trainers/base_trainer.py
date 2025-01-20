@@ -37,8 +37,8 @@ import torch.optim as optim
 import wandb
 from tqdm import tqdm
 
-from zoedepth.utils.config import flatten
-from zoedepth.utils.misc import RunningAverageDict, colorize, colors
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.config import flatten
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.misc import RunningAverageDict, colorize, colors
 
 
 def is_rank_zero(args):
@@ -48,7 +48,7 @@ def is_rank_zero(args):
 class BaseTrainer:
     def __init__(self, config, model, train_loader, test_loader=None, device=None):
         """ Base Trainer class for training a model."""
-        
+
         self.config = config
         self.metric_criterion = "abs_rel"
         if device is None:
@@ -72,7 +72,7 @@ class BaseTrainer:
         import glob
         import os
 
-        from zoedepth.models.model_io import load_wts
+        from third_party.Depth_Anything.metric_depth.zoedepth.models.model_io import load_wts
 
         if hasattr(self.config, "checkpoint"):
             checkpoint = self.config.checkpoint
@@ -160,7 +160,6 @@ class BaseTrainer:
         best_loss = np.inf
         validate_every = int(self.config.validate_every * self.iters_per_epoch)
 
-
         if self.config.prefetch:
 
             for i, batch in tqdm(enumerate(self.train_loader), desc=f"Prefetching...",
@@ -173,7 +172,7 @@ class BaseTrainer:
         for epoch in range(self.config.epochs):
             if self.should_early_stop():
                 break
-            
+
             self.epoch = epoch
             ################################# Train loop ##########################################################
             if self.should_log:
@@ -304,7 +303,7 @@ class BaseTrainer:
             v, vmin=None, vmax=None, cmap=scalar_cmap) for k, v in scalar_field.items()}
         images = {**rgb, **depth, **scalar_field}
         wimages = {
-            prefix+"Predictions": [wandb.Image(v, caption=k) for k, v in images.items()]}
+            prefix + "Predictions": [wandb.Image(v, caption=k) for k, v in images.items()]}
         wandb.log(wimages, step=self.step)
 
     def log_line_plot(self, data):

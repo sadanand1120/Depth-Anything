@@ -26,18 +26,18 @@ import itertools
 
 import torch
 import torch.nn as nn
-from zoedepth.models.depth_model import DepthModel
-from zoedepth.models.base_models.midas import MidasCore
-from zoedepth.models.base_models.depth_anything import DepthAnythingCore
-from zoedepth.models.layers.attractor import AttractorLayer, AttractorLayerUnnormed
-from zoedepth.models.layers.dist_layers import ConditionalLogBinomial
-from zoedepth.models.layers.localbins_layers import (Projector, SeedBinRegressor,
-                                            SeedBinRegressorUnnormed)
-from zoedepth.models.model_io import load_state_from_resource
+from third_party.Depth_Anything.metric_depth.zoedepth.models.depth_model import DepthModel
+from third_party.Depth_Anything.metric_depth.zoedepth.models.base_models.midas import MidasCore
+from third_party.Depth_Anything.metric_depth.zoedepth.models.base_models.depth_anything import DepthAnythingCore
+from third_party.Depth_Anything.metric_depth.zoedepth.models.layers.attractor import AttractorLayer, AttractorLayerUnnormed
+from third_party.Depth_Anything.metric_depth.zoedepth.models.layers.dist_layers import ConditionalLogBinomial
+from third_party.Depth_Anything.metric_depth.zoedepth.models.layers.localbins_layers import (Projector, SeedBinRegressor,
+                                                                                             SeedBinRegressorUnnormed)
+from third_party.Depth_Anything.metric_depth.zoedepth.models.model_io import load_state_from_resource
 
 
 class ZoeDepth(DepthModel):
-    def __init__(self, core,  n_bins=64, bin_centers_type="softplus", bin_embedding_dim=128, min_depth=1e-3, max_depth=10,
+    def __init__(self, core, n_bins=64, bin_centers_type="softplus", bin_embedding_dim=128, min_depth=1e-3, max_depth=10,
                  n_attractors=[16, 8, 4, 1], attractor_alpha=300, attractor_gamma=2, attractor_kind='sum', attractor_type='exp', min_temp=5, max_temp=50, train_midas=True,
                  midas_lr_factor=10, encoder_lr_factor=10, pos_enc_lr_factor=10, inverse_midas=False, **kwargs):
         """ZoeDepth model. This is the version of ZoeDepth that has a single metric head
@@ -85,7 +85,7 @@ class ZoeDepth(DepthModel):
         num_out_features = self.core.output_channels[1:]
 
         # print('core output channels:', self.core.output_channels)
-        
+
         self.conv2 = nn.Conv2d(btlnck_features, btlnck_features,
                                kernel_size=1, stride=1, padding=0)  # btlnck conv
 
@@ -131,7 +131,7 @@ class ZoeDepth(DepthModel):
             return_final_centers (bool, optional): Whether to return the final bin centers. Defaults to False.
             denorm (bool, optional): Whether to denormalize the input image. This reverses ImageNet normalization as midas normalization is different. Defaults to False.
             return_probs (bool, optional): Whether to return the output probability distribution. Defaults to False.
-        
+
         Returns:
             dict: Dictionary containing the following keys:
                 - rel_depth (torch.Tensor): Relative depth map of shape (B, H, W)
@@ -141,7 +141,7 @@ class ZoeDepth(DepthModel):
 
         """
         # print('input shape', x.shape)
-        
+
         b, c, h, w = x.shape
         # print("input shape:", x.shape)
         self.orig_input_width = w
@@ -152,7 +152,7 @@ class ZoeDepth(DepthModel):
         # print('out type:', type(out))
         # for k in range(len(out)):
         #     print(k, out[k].shape)
-        
+
         outconv_activation = out[0]
         btlnck = out[1]
         x_blocks = out[2:]
@@ -249,10 +249,10 @@ class ZoeDepth(DepthModel):
     def build(midas_model_type="DPT_BEiT_L_384", pretrained_resource=None, use_pretrained_midas=False, train_midas=False, freeze_midas_bn=True, **kwargs):
         # core = MidasCore.build(midas_model_type=midas_model_type, use_pretrained_midas=use_pretrained_midas,
         #                        train_midas=train_midas, fetch_features=True, freeze_bn=freeze_midas_bn, **kwargs)
-        
+
         core = DepthAnythingCore.build(midas_model_type=midas_model_type, use_pretrained_midas=use_pretrained_midas,
                                        train_midas=train_midas, fetch_features=True, freeze_bn=freeze_midas_bn, **kwargs)
-        
+
         model = ZoeDepth(core, **kwargs)
         if pretrained_resource:
             assert isinstance(pretrained_resource, str), "pretrained_resource must be a string"

@@ -1,40 +1,15 @@
-# MIT License
-
-# Copyright (c) 2022 Intelligent Systems Lab Org
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
-# File author: Shariq Farooq Bhat
-
 import argparse
 from pprint import pprint
-
+from third_party.Depth_Anything.metric_depth import zoedepth
 import torch
-from zoedepth.utils.easydict import EasyDict as edict
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.easydict import EasyDict as edict
 from tqdm import tqdm
-
-from zoedepth.data.data_mono import DepthDataLoader
-from zoedepth.models.builder import build_model
-from zoedepth.utils.arg_utils import parse_unknown
-from zoedepth.utils.config import change_dataset, get_config, ALL_EVAL_DATASETS, ALL_INDOOR, ALL_OUTDOOR
-from zoedepth.utils.misc import (RunningAverageDict, colors, compute_metrics,
-                        count_parameters)
+from third_party.Depth_Anything.metric_depth.zoedepth.data.data_mono import DepthDataLoader
+from third_party.Depth_Anything.metric_depth.zoedepth.models.builder import build_model
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.arg_utils import parse_unknown
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.config import change_dataset, get_config, ALL_EVAL_DATASETS, ALL_INDOOR, ALL_OUTDOOR
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.misc import (RunningAverageDict, colors, compute_metrics,
+                                                                         count_parameters)
 
 
 @torch.no_grad()
@@ -85,7 +60,7 @@ def evaluate(model, test_loader, config, round_vals=True, round_precision=3):
             # print("Saving images ...")
             from PIL import Image
             import torchvision.transforms as transforms
-            from zoedepth.utils.misc import colorize
+            from third_party.Depth_Anything.metric_depth.zoedepth.utils.misc import colorize
 
             os.makedirs(config.save_images, exist_ok=True)
             # def save_image(img, path):
@@ -96,8 +71,6 @@ def evaluate(model, test_loader, config, round_vals=True, round_precision=3):
             Image.fromarray(d).save(os.path.join(config.save_images, f"{i}_depth.png"))
             Image.fromarray(p).save(os.path.join(config.save_images, f"{i}_pred.png"))
 
-
-
         # print(depth.shape, pred.shape)
         metrics.update(compute_metrics(depth, pred, config=config))
 
@@ -107,6 +80,7 @@ def evaluate(model, test_loader, config, round_vals=True, round_precision=3):
         def r(m): return m
     metrics = {k: r(v) for k, v in metrics.get_value().items()}
     return metrics
+
 
 def main(config):
     model = build_model(config)
@@ -154,7 +128,7 @@ if __name__ == '__main__':
         datasets = args.dataset.split(",")
     else:
         datasets = [args.dataset]
-    
+
     for dataset in datasets:
         eval_model(args.model, pretrained_resource=args.pretrained_resource,
-                    dataset=dataset, **overwrite_kwargs)
+                   dataset=dataset, **overwrite_kwargs)

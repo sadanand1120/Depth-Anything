@@ -22,12 +22,12 @@
 
 # File author: Shariq Farooq Bhat
 
-from zoedepth.utils.misc import count_parameters, parallelize
-from zoedepth.utils.config import get_config
-from zoedepth.utils.arg_utils import parse_unknown
-from zoedepth.trainers.builder import get_trainer
-from zoedepth.models.builder import build_model
-from zoedepth.data.data_mono import MixedNYUKITTI
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.misc import count_parameters, parallelize
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.config import get_config
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.arg_utils import parse_unknown
+from third_party.Depth_Anything.metric_depth.zoedepth.trainers.builder import get_trainer
+from third_party.Depth_Anything.metric_depth.zoedepth.models.builder import build_model
+from third_party.Depth_Anything.metric_depth.zoedepth.data.data_mono import MixedNYUKITTI
 import torch.utils.data.distributed
 import torch.multiprocessing as mp
 import torch
@@ -66,7 +66,7 @@ def load_ckpt(config, model, checkpoint_dir="./checkpoints", ckpt_type="best"):
     import glob
     import os
 
-    from zoedepth.models.model_io import load_wts
+    from third_party.Depth_Anything.metric_depth.zoedepth.models.model_io import load_wts
 
     if hasattr(config, "checkpoint"):
         checkpoint = config.checkpoint
@@ -93,9 +93,9 @@ def main_worker(gpu, ngpus_per_node, config):
         config.gpu = gpu
 
         model = build_model(config)
-        
+
         # print(model)
-        
+
         model = load_ckpt(config, model)
         model = parallelize(config, model)
 

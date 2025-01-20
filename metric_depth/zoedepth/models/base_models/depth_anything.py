@@ -26,7 +26,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from torchvision.transforms import Normalize
-from zoedepth.models.base_models.dpt_dinov2.dpt import DPT_DINOv2
+from third_party.Depth_Anything.metric_depth.zoedepth.models.base_models.dpt_dinov2.dpt import DPT_DINOv2
 
 
 def denormalize(x):
@@ -41,6 +41,7 @@ def denormalize(x):
     mean = torch.Tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1).to(x.device)
     std = torch.Tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1).to(x.device)
     return x * std + mean
+
 
 def get_activation(name, bank):
     def hook(model, input, output):
@@ -173,6 +174,7 @@ class Resize(object):
         width, height = self.get_size(*x.shape[-2:][::-1])
         return nn.functional.interpolate(x, (height, width), mode='bilinear', align_corners=True)
 
+
 class PrepForMidas(object):
     def __init__(self, resize_mode="minimal", keep_aspect_ratio=True, img_size=384, do_resize=True):
         if isinstance(img_size, int):
@@ -264,7 +266,7 @@ class DepthAnythingCore(nn.Module):
             if denorm:
                 x = denormalize(x)
             x = self.prep(x)
-        
+
         with torch.set_grad_enabled(self.trainable):
 
             rel_depth = self.core(x)
@@ -335,17 +337,17 @@ class DepthAnythingCore(nn.Module):
         if "img_size" in kwargs:
             kwargs = DepthAnythingCore.parse_img_size(kwargs)
         img_size = kwargs.pop("img_size", [384, 384])
-        
+
         depth_anything = DPT_DINOv2(out_channels=[256, 512, 1024, 1024], use_clstoken=False)
-        
-        state_dict = torch.load('./checkpoints/depth_anything_vitl14.pth', map_location='cpu')
+
+        state_dict = torch.load('/home/dynamo/AMRL_Research/repos/nspl/third_party/Depth_Anything/metric_depth/checkpoints/depth_anything_vitl14.pth', map_location='cpu')
         depth_anything.load_state_dict(state_dict)
-        
+
         kwargs.update({'keep_aspect_ratio': force_keep_ar})
-        
+
         depth_anything_core = DepthAnythingCore(depth_anything, trainable=train_midas, fetch_features=fetch_features,
-                               freeze_bn=freeze_bn, img_size=img_size, **kwargs)
-        
+                                                freeze_bn=freeze_bn, img_size=img_size, **kwargs)
+
         depth_anything_core.set_output_channels()
         return depth_anything_core
 
@@ -366,7 +368,7 @@ class DepthAnythingCore(nn.Module):
 
 
 nchannels2models = {
-    tuple([256]*5): ["DPT_BEiT_L_384", "DPT_BEiT_L_512", "DPT_BEiT_B_384", "DPT_SwinV2_L_384", "DPT_SwinV2_B_384", "DPT_SwinV2_T_256", "DPT_Large", "DPT_Hybrid"],
+    tuple([256] * 5): ["DPT_BEiT_L_384", "DPT_BEiT_L_512", "DPT_BEiT_B_384", "DPT_SwinV2_L_384", "DPT_SwinV2_B_384", "DPT_SwinV2_T_256", "DPT_Large", "DPT_Hybrid"],
     (512, 256, 128, 64, 64): ["MiDaS_small"]
 }
 

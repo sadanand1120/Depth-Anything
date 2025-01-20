@@ -27,23 +27,23 @@ import itertools
 import torch
 import torch.nn as nn
 
-from zoedepth.models.depth_model import DepthModel
-from zoedepth.models.base_models.midas import MidasCore
-from zoedepth.models.base_models.depth_anything import DepthAnythingCore
-from zoedepth.models.layers.attractor import AttractorLayer, AttractorLayerUnnormed
-from zoedepth.models.layers.dist_layers import ConditionalLogBinomial
-from zoedepth.models.layers.localbins_layers import (Projector, SeedBinRegressor,
-                                            SeedBinRegressorUnnormed)
-from zoedepth.models.layers.patch_transformer import PatchTransformerEncoder
-from zoedepth.models.model_io import load_state_from_resource
+from third_party.Depth_Anything.metric_depth.zoedepth.models.depth_model import DepthModel
+from third_party.Depth_Anything.metric_depth.zoedepth.models.base_models.midas import MidasCore
+from third_party.Depth_Anything.metric_depth.zoedepth.models.base_models.depth_anything import DepthAnythingCore
+from third_party.Depth_Anything.metric_depth.zoedepth.models.layers.attractor import AttractorLayer, AttractorLayerUnnormed
+from third_party.Depth_Anything.metric_depth.zoedepth.models.layers.dist_layers import ConditionalLogBinomial
+from third_party.Depth_Anything.metric_depth.zoedepth.models.layers.localbins_layers import (Projector, SeedBinRegressor,
+                                                                                             SeedBinRegressorUnnormed)
+from third_party.Depth_Anything.metric_depth.zoedepth.models.layers.patch_transformer import PatchTransformerEncoder
+from third_party.Depth_Anything.metric_depth.zoedepth.models.model_io import load_state_from_resource
 
 
 class ZoeDepthNK(DepthModel):
-    def __init__(self, core,  bin_conf, bin_centers_type="softplus", bin_embedding_dim=128,
+    def __init__(self, core, bin_conf, bin_centers_type="softplus", bin_embedding_dim=128,
                  n_attractors=[16, 8, 4, 1], attractor_alpha=300, attractor_gamma=2, attractor_kind='sum', attractor_type='exp',
                  min_temp=5, max_temp=50,
                  memory_efficient=False, train_midas=True,
-                 is_midas_pretrained=True, midas_lr_factor=1, encoder_lr_factor=10, pos_enc_lr_factor=10, inverse_midas=False,  **kwargs):
+                 is_midas_pretrained=True, midas_lr_factor=1, encoder_lr_factor=10, pos_enc_lr_factor=10, inverse_midas=False, **kwargs):
         """ZoeDepthNK model. This is the version of ZoeDepth that has two metric heads and uses a learned router to route to experts.
 
         Args:
@@ -65,7 +65,7 @@ class ZoeDepthNK(DepthModel):
 
             min_temp (int, optional): Lower bound for temperature of output probability distribution. Defaults to 5.
             max_temp (int, optional): Upper bound for temperature of output probability distribution. Defaults to 50.
-            
+
             memory_efficient (bool, optional): Whether to use memory efficient version of attractor layers. Memory efficient version is slower but is recommended incase of multiple metric heads in order save GPU memory. Defaults to False.
 
             train_midas (bool, optional): Whether to train "core", the base midas model. Defaults to True.
@@ -126,14 +126,14 @@ class ZoeDepthNK(DepthModel):
         # We have bins for each bin conf.
         # Create a map (ModuleDict) of 'name' -> seed_bin_regressor
         self.seed_bin_regressors = nn.ModuleDict(
-            {conf['name']: SeedBinRegressorLayer(btlnck_features, conf["n_bins"], mlp_dim=bin_embedding_dim//2, min_depth=conf["min_depth"], max_depth=conf["max_depth"])
+            {conf['name']: SeedBinRegressorLayer(btlnck_features, conf["n_bins"], mlp_dim=bin_embedding_dim // 2, min_depth=conf["min_depth"], max_depth=conf["max_depth"])
              for conf in bin_conf}
         )
 
         self.seed_projector = Projector(
-            btlnck_features, bin_embedding_dim, mlp_dim=bin_embedding_dim//2)
+            btlnck_features, bin_embedding_dim, mlp_dim=bin_embedding_dim // 2)
         self.projectors = nn.ModuleList([
-            Projector(num_out, bin_embedding_dim, mlp_dim=bin_embedding_dim//2)
+            Projector(num_out, bin_embedding_dim, mlp_dim=bin_embedding_dim // 2)
             for num_out in num_out_features
         ])
 
@@ -164,7 +164,7 @@ class ZoeDepthNK(DepthModel):
             return_final_centers (bool, optional): Whether to return the final centers of the attractors. Defaults to False.
             denorm (bool, optional): Whether to denormalize the input image. Defaults to False.
             return_probs (bool, optional): Whether to return the probabilities of the bins. Defaults to False.
-        
+
         Returns:
             dict: Dictionary of outputs with keys:
                 - "rel_depth": Relative depth map of shape (B, 1, H, W)
@@ -207,7 +207,7 @@ class ZoeDepthNK(DepthModel):
         seed_bin_regressor = self.seed_bin_regressors[bin_conf_name]
         _, seed_b_centers = seed_bin_regressor(x)
         if self.bin_centers_type == 'normed' or self.bin_centers_type == 'hybrid2':
-            b_prev = (seed_b_centers - min_depth)/(max_depth - min_depth)
+            b_prev = (seed_b_centers - min_depth) / (max_depth - min_depth)
         else:
             b_prev = seed_b_centers
         prev_b_embedding = self.seed_projector(x)
@@ -326,16 +326,16 @@ class ZoeDepthNK(DepthModel):
     def build(midas_model_type="DPT_BEiT_L_384", pretrained_resource=None, use_pretrained_midas=False, train_midas=False, freeze_midas_bn=True, **kwargs):
         # core = MidasCore.build(midas_model_type=midas_model_type, use_pretrained_midas=use_pretrained_midas,
         #                        train_midas=train_midas, fetch_features=True, freeze_bn=freeze_midas_bn, **kwargs)
-        
+
         core = DepthAnythingCore.build(midas_model_type='dinov2_large', use_pretrained_midas=use_pretrained_midas,
                                        train_midas=train_midas, fetch_features=True, freeze_bn=freeze_midas_bn, **kwargs)
-        
+
         model = ZoeDepthNK(core, **kwargs)
         if pretrained_resource:
             assert isinstance(pretrained_resource, str), "pretrained_resource must be a string"
             model = load_state_from_resource(model, pretrained_resource)
         return model
-    
+
     @staticmethod
     def build_from_config(config):
         return ZoeDepthNK.build(**config)

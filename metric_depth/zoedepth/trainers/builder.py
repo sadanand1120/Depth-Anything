@@ -36,7 +36,7 @@ def get_trainer(config):
         ValueError: If the specified trainer does not exist under trainers/ folder
 
     Returns:
-        Trainer (inherited from zoedepth.trainers.BaseTrainer): The Trainer object
+        Trainer (inherited from third_party.Depth_Anything.metric_depth.zoedepth.trainers.BaseTrainer): The Trainer object
     """
     assert "trainer" in config and config.trainer is not None and config.trainer != '', "Trainer not specified. Config: {0}".format(
         config)

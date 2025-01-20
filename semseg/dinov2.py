@@ -15,7 +15,7 @@ class DINOv2(nn.Module):
         super().__init__()
         
         if version == 'large':
-            self.dinov2 = torch.hub.load('torchhub/facebookresearch_dinov2_main', 'dinov2_vitl14', source='local', pretrained=False)
+            self.dinov2 = torch.hub.load('/home/dynamo/AMRL_Research/repos/nspl/third_party/Depth_Anything/torchhub/facebookresearch_dinov2_main', 'dinov2_vitl14', source='local', pretrained=False)
         else:
             raise NotImplementedError
 

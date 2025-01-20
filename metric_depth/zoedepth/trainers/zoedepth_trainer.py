@@ -26,15 +26,16 @@ import torch
 import torch.cuda.amp as amp
 import torch.nn as nn
 
-from zoedepth.trainers.loss import GradL1Loss, SILogLoss
-from zoedepth.utils.config import DATASETS_CONFIG
-from zoedepth.utils.misc import compute_metrics
-from zoedepth.data.preprocess import get_black_border
+from third_party.Depth_Anything.metric_depth.zoedepth.trainers.loss import GradL1Loss, SILogLoss
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.config import DATASETS_CONFIG
+from third_party.Depth_Anything.metric_depth.zoedepth.utils.misc import compute_metrics
+from third_party.Depth_Anything.metric_depth.zoedepth.data.preprocess import get_black_border
 
 from .base_trainer import BaseTrainer
 from torchvision import transforms
 from PIL import Image
 import numpy as np
+
 
 class Trainer(BaseTrainer):
     def __init__(self, config, model, train_loader, test_loader=None, device=None):
@@ -102,7 +103,7 @@ class Trainer(BaseTrainer):
         self.optimizer.zero_grad()
 
         return losses
-    
+
     @torch.no_grad()
     def eval_infer(self, x):
         with amp.autocast(enabled=self.config.use_amp):
@@ -115,7 +116,7 @@ class Trainer(BaseTrainer):
         # if we are not avoiding the black border, we can just use the normal inference
         if not self.config.get("avoid_boundary", False):
             return self.eval_infer(x)
-        
+
         # otherwise, we need to crop the image to avoid the black border
         # For now, this may be a bit slow due to converting to numpy and back
         # We assume no normalization is done on the input image
@@ -135,15 +136,12 @@ class Trainer(BaseTrainer):
         # resize the prediction to x_np_cropped's size
         pred_depths_cropped = nn.functional.interpolate(
             pred_depths_cropped, size=(x_np_cropped.shape[0], x_np_cropped.shape[1]), mode="bilinear", align_corners=False)
-        
 
         # pad the prediction back to the original size
         pred_depths = torch.zeros((1, 1, x_np.shape[0], x_np.shape[1]), device=pred_depths_cropped.device, dtype=pred_depths_cropped.dtype)
         pred_depths[:, :, top:bottom, left:right] = pred_depths_cropped
 
         return pred_depths
-
-
 
     def validate_on_batch(self, batch, val_step):
         images = batch['image'].to(self.device)
